@@ -1,0 +1,6 @@
+@MapeiaVoto_HostAddress = http://localhost:5192
+
+GET {{MapeiaVoto_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
