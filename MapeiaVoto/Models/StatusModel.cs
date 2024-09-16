@@ -9,5 +9,7 @@ namespace MapeiaVoto.Application.Models
         public string nome { get; set; }
         [JsonIgnore]
         public virtual ICollection<Candidato> candidato { get; set; } = new List<Candidato>();
+        [JsonIgnore]
+        public virtual ICollection<Usuario> usuario { get; set; } = new List<Usuario>();
     }
 }

@@ -1,34 +1,36 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace MapeiaVoto.Infrastructure.Data.Migrations
 {
-    /// <inheritdoc />
     public partial class AddPerfilUsuarioEntity : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "PerfilUsuario",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    nome = table.Column<string>(type: "varchar(20)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PerfilUsuario", x => x.id);
-                });
+            // Verifica se a tabela PerfilUsuario já existe antes de tentar criá-la
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PerfilUsuario' and xtype='U')
+                BEGIN
+                    CREATE TABLE [PerfilUsuario] (
+                        [id] int NOT NULL IDENTITY,
+                        [nome] varchar(20) NOT NULL,
+                        CONSTRAINT [PK_PerfilUsuario] PRIMARY KEY ([id])
+                    )
+                END
+            ");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "PerfilUsuario");
+            // Verifica se a tabela PerfilUsuario existe antes de tentar excluí-la
+            migrationBuilder.Sql(@"
+                IF EXISTS (SELECT * FROM sysobjects WHERE name='PerfilUsuario' and xtype='U')
+                BEGIN
+                    DROP TABLE [PerfilUsuario]
+                END
+            ");
         }
     }
 }

@@ -21,13 +21,16 @@ namespace MapeiaVoto.Infrastructure.Data.Context
         public DbSet<NivelEscolaridade> nivelescolaridade { get; set; }
         public DbSet<Candidato> candidato { get; set; }
         public DbSet<CargoDisputado> cargodisputado { get; set; }
+        public DbSet<Usuario> usuario { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var stringConexao = @"Server=GUSTACNOTE;DataBase=MapeiaVotoV03;integrated security=true;TrustServerCertificate=True;";
+                //var stringConexao = @"Server=GUSTACNOTE;DataBase=MapeiaVotoV03;integrated security=true;TrustServerCertificate=True;";
+                var stringConexao = "Data Source=sql8020.site4now.net;Initial Catalog=db_aa9649_mapeiavoto;User Id=db_aa9649_mapeiavoto_admin;Password=MapeiaVoto123#;";
+
                 optionsBuilder.UseSqlServer(stringConexao);
             }
         }
@@ -43,6 +46,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
             modelBuilder.ApplyConfiguration(new NivelEscolaridadeMap());
             modelBuilder.ApplyConfiguration(new CandidatoMap());
             modelBuilder.ApplyConfiguration(new CargoDisputadoMap());
+            modelBuilder.ApplyConfiguration(new UsuarioMap());
         }
     }
 
@@ -52,7 +56,9 @@ namespace MapeiaVoto.Infrastructure.Data.Context
         public SqlServerContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<SqlServerContext>();
-            var stringConexao = @"Server=GUSTACNOTE;DataBase=MapeiaVotoV03;integrated security=true;TrustServerCertificate=True;";
+            //var stringConexao = @"Server=GUSTACNOTE;DataBase=MapeiaVotoV03;integrated security=true;TrustServerCertificate=True;";
+            var stringConexao = "Data Source=sql8020.site4now.net;Initial Catalog=db_aa9649_mapeiavoto;User Id=db_aa9649_mapeiavoto_admin;Password=MapeiaVoto123#;";
+
             optionsBuilder.UseSqlServer(stringConexao);
 
             return new SqlServerContext(optionsBuilder.Options);

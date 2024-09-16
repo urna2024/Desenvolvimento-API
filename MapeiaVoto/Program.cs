@@ -52,7 +52,7 @@ builder.Services.AddControllers();
 // Configuração do Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Partymanager API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MapeiaVoto API", Version = "v1" });
 });
 
 // Configuração do JSON
@@ -84,6 +84,9 @@ builder.Services.AddSingleton(new MapperConfiguration(config =>
     config.CreateMap<CargoDisputadoModel, CargoDisputado>();
 
 
+    config.CreateMap<Usuario, UsuarioModel>();
+    config.CreateMap<UsuarioModel, Usuario>();
+
 
 
 }).CreateMapper());
@@ -109,18 +112,17 @@ builder.Services.AddScoped<IBaseRepository<Candidato>, BaseRepository<Candidato>
 builder.Services.AddScoped<IBaseService<CargoDisputado>, BaseService<CargoDisputado>>();
 builder.Services.AddScoped<IBaseRepository<CargoDisputado>, BaseRepository<CargoDisputado>>();
 
+builder.Services.AddScoped<IBaseService<Usuario>, BaseService<Usuario>>();
+builder.Services.AddScoped<IBaseRepository<Usuario>, BaseRepository<Usuario>>();
 
 
 var app = builder.Build();
 
 // Configuração do pipeline de requisição
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Partymanager API v1"));
-}
+// Exibindo Swagger tanto em desenvolvimento quanto em produção
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MapeiaVoto API v1"));
 
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Serve arquivos estáticos da pasta wwwroot por padrão
@@ -137,4 +139,33 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+
+//var app = builder.Build();
+
+//// Configuração do pipeline de requisição
+
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseDeveloperExceptionPage();
+//    app.UseSwagger();
+//    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MapeiaVoto API v1"));
+//}
+
+//app.UseHttpsRedirection();
+//app.UseStaticFiles(); // Serve arquivos estáticos da pasta wwwroot por padrão
+
+//app.UseRouting();
+
+//// Ativando CORS
+//app.UseCors("CorsPolicy");
+
+//// Ativando Autenticação e Autorização
+//app.UseAuthentication();
+//app.UseAuthorization();
+
+//app.MapControllers();
+
+//app.Run();
 

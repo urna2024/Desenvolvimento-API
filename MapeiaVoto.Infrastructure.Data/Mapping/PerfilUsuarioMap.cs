@@ -21,7 +21,11 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
                 .HasColumnType("varchar(20)") // Tipo da coluna
                 .HasColumnName("nome"); // Nome da coluna no banco de dados
 
-
+            // Definir a relação com Representante
+            builder.HasMany(s => s.usuario)
+                .WithOne(r => r.perfilusuario)
+                .HasForeignKey(r => r.idPerfilUsuario)
+                .OnDelete(DeleteBehavior.Restrict); // Definir o comportamento de deleção
         }
     }
 }
