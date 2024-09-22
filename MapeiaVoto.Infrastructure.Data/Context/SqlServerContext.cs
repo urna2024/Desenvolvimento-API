@@ -13,7 +13,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
             this.Database.EnsureCreated();
         }
 
-        public DbSet<Entrevistado> Entrevistados { get; set; }
+        public DbSet<Entrevistado> entrevistado { get; set; }
         public DbSet<Status> status { get; set; }
         public DbSet<Genero> genero { get; set; }
         public DbSet<PerfilUsuario> perfilusuario { get; set; }
@@ -23,6 +23,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
         public DbSet<CargoDisputado> cargodisputado { get; set; }
         public DbSet<Usuario> usuario { get; set; }
         public DbSet<RendaFamiliar> rendafamiliar { get; set; }
+        public DbSet<PesquisaEleitoralMunicipal> pesquisaeleitoralmunicipal { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -49,6 +50,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
             modelBuilder.ApplyConfiguration(new CargoDisputadoMap());
             modelBuilder.ApplyConfiguration(new UsuarioMap());
             modelBuilder.ApplyConfiguration(new RendaFamiliarMap());
+            modelBuilder.ApplyConfiguration(new PesquisaEleitoralMunicipalMap());
         }
     }
 

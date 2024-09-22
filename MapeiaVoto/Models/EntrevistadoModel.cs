@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MapeiaVoto.Domain.Entidades;
 
-namespace MapeiaVoto.Domain.Entidades
+namespace MapeiaVoto.Application.Models
 {
-    public class Entrevistado : BaseEntity
+    public class EntrevistadoModel
     {
+        public int id { get; set; }
         public string nomeCompleto { get; set; }
         public DateTime dataNascimento { get; set; }
         public string uf { get; set; }

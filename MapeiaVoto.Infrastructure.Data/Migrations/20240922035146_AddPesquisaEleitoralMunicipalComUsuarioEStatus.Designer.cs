@@ -4,6 +4,7 @@ using MapeiaVoto.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MapeiaVoto.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(SqlServerContext))]
-    partial class SqlServerContextModelSnapshot : ModelSnapshot
+    [Migration("20240922035146_AddPesquisaEleitoralMunicipalComUsuarioEStatus")]
+    partial class AddPesquisaEleitoralMunicipalComUsuarioEStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,9 +121,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     b.Property<int>("idNivelEscolaridade")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idPesquisaEleitoralMunicipal")
-                        .HasColumnType("int");
-
                     b.Property<int>("idRendaFamiliar")
                         .HasColumnType("int");
 
@@ -144,8 +144,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     b.HasIndex("idGenero");
 
                     b.HasIndex("idNivelEscolaridade");
-
-                    b.HasIndex("idPesquisaEleitoralMunicipal");
 
                     b.HasIndex("idRendaFamiliar");
 
@@ -410,12 +408,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MapeiaVoto.Domain.Entidades.PesquisaEleitoralMunicipal", "pesquisaeleitoralmunicipal")
-                        .WithMany("entrevistado")
-                        .HasForeignKey("idPesquisaEleitoralMunicipal")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("fk_pesquisaeleitoralmunicipal_entrevistado");
-
                     b.HasOne("MapeiaVoto.Domain.Entidades.RendaFamiliar", "rendafamiliar")
                         .WithMany("entrevistado")
                         .HasForeignKey("idRendaFamiliar")
@@ -425,8 +417,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     b.Navigation("genero");
 
                     b.Navigation("nivelescolaridade");
-
-                    b.Navigation("pesquisaeleitoralmunicipal");
 
                     b.Navigation("rendafamiliar");
                 });
@@ -506,11 +496,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.PerfilUsuario", b =>
                 {
                     b.Navigation("usuario");
-                });
-
-            modelBuilder.Entity("MapeiaVoto.Domain.Entidades.PesquisaEleitoralMunicipal", b =>
-                {
-                    b.Navigation("entrevistado");
                 });
 
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.RendaFamiliar", b =>

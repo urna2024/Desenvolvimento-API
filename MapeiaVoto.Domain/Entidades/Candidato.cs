@@ -18,6 +18,7 @@ namespace MapeiaVoto.Domain.Entidades
         public virtual Status status { get; set; }
         public int idPartidoPolitico { get; set; }
         public virtual PartidoPolitico partidopolitico { get; set; }
+
         public int idCargoDisputado { get; set; }
         public virtual CargoDisputado cargodisputado { get; set; }
     }

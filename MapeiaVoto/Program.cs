@@ -90,6 +90,15 @@ builder.Services.AddSingleton(new MapperConfiguration(config =>
     config.CreateMap<RendaFamiliar, RendaFamiliarModel>();
     config.CreateMap<RendaFamiliarModel, RendaFamiliar>();
 
+    config.CreateMap<Entrevistado, EntrevistadoModel>();
+    config.CreateMap<EntrevistadoModel, Entrevistado>();
+
+    config.CreateMap<PesquisaEleitoralMunicipal, PesquisaEleitoralMunicipalModel>();
+    config.CreateMap<PesquisaEleitoralMunicipalModel, PesquisaEleitoralMunicipal>();
+
+    config.CreateMap<NivelEscolaridade, NivelEscolaridadeModel>();
+    config.CreateMap<NivelEscolaridadeModel, NivelEscolaridade>();
+
 
 
 }).CreateMapper());
@@ -120,6 +129,15 @@ builder.Services.AddScoped<IBaseRepository<Usuario>, BaseRepository<Usuario>>();
 
 builder.Services.AddScoped<IBaseService<RendaFamiliar>, BaseService<RendaFamiliar>>();
 builder.Services.AddScoped<IBaseRepository<RendaFamiliar>, BaseRepository<RendaFamiliar>>();
+
+builder.Services.AddScoped<IBaseService<Entrevistado>, BaseService<Entrevistado>>();
+builder.Services.AddScoped<IBaseRepository<Entrevistado>, BaseRepository<Entrevistado>>();
+
+builder.Services.AddScoped<IBaseService<PesquisaEleitoralMunicipal>, BaseService<PesquisaEleitoralMunicipal>>();
+builder.Services.AddScoped<IBaseRepository<PesquisaEleitoralMunicipal>, BaseRepository<PesquisaEleitoralMunicipal>>();
+
+builder.Services.AddScoped<IBaseService<NivelEscolaridade>, BaseService<NivelEscolaridade>>();
+builder.Services.AddScoped<IBaseRepository<NivelEscolaridade>, BaseRepository<NivelEscolaridade>>();
 
 var app = builder.Build();
 

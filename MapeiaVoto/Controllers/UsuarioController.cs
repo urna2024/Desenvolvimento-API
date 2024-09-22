@@ -5,7 +5,6 @@ using MapeiaVoto.Infrastructure.Data.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,7 +57,8 @@ namespace SGFME.Application.Controllers
 
                     var novoUsuario = new Usuario
                     {
-                        nomeUsuario = request.nomeUsuario,
+                        nomeUsuario = request.nomeUsuario, // Incluído nomeUsuario
+                        email = request.email, // Incluído email
                         senha = request.senha,
                         idStatus = request.idStatus,
                         idPerfilUsuario = request.idPerfilUsuario,
@@ -98,7 +98,8 @@ namespace SGFME.Application.Controllers
                     .Select(u => new
                     {
                         u.id,
-                        u.nomeUsuario,
+                        u.nomeUsuario, // Incluído nomeUsuario
+                        u.email, // Incluído email
                         u.idStatus,
                         statusNome = u.status.nome,
                         perfilusuario = u.perfilusuario.nome
@@ -128,7 +129,8 @@ namespace SGFME.Application.Controllers
                         return NotFound("Usuário não encontrado.");
                     }
 
-                    usuario.nomeUsuario = request.nomeUsuario;
+                    usuario.nomeUsuario = request.nomeUsuario; // Atualizando nomeUsuario
+                    usuario.email = request.email; // Atualizando email
                     usuario.senha = request.senha;
                     usuario.idStatus = request.idStatus;
                     usuario.idPerfilUsuario = request.idPerfilUsuario;

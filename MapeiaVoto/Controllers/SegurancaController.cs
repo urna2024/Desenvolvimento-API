@@ -29,20 +29,20 @@ namespace SGFME.Application.Controllers
             _context = context;
         }
 
-        // Método de validação de login
+        // Método de validação de login usando email e senha
         [HttpPost]
         [Route("validaLogin")]
         public IActionResult Login([FromBody] dynamic loginDetalhes)
         {
-            string nomeUsuario = loginDetalhes.nomeUsuario;
+            string email = loginDetalhes.email;
             string senha = loginDetalhes.senha;
 
-            if (string.IsNullOrEmpty(nomeUsuario) || string.IsNullOrEmpty(senha))
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(senha))
             {
-                return BadRequest("Nome de usuário ou senha não podem estar vazios.");
+                return BadRequest("Email ou senha não podem estar vazios.");
             }
 
-            var usuario = ValidarUsuario(nomeUsuario, senha);
+            var usuario = ValidarUsuario(email, senha);
 
             if (usuario != null)
             {
@@ -86,7 +86,7 @@ namespace SGFME.Application.Controllers
             }
             else
             {
-                return Unauthorized("Usuário ou senha inválidos.");
+                return Unauthorized("Email ou senha inválidos.");
             }
         }
 
@@ -146,11 +146,11 @@ namespace SGFME.Application.Controllers
             }
         }
 
-        private Usuario ValidarUsuario(string nomeUsuario, string senha)
+        private Usuario ValidarUsuario(string email, string senha)
         {
             return _context.usuario
                 .Include(u => u.status)
-                .FirstOrDefault(u => u.nomeUsuario == nomeUsuario && u.senha == senha);
+                .FirstOrDefault(u => u.email == email && u.senha == senha);
         }
 
         private string GerarTokenJWT(UsuarioModel usuario)
@@ -163,7 +163,7 @@ namespace SGFME.Application.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, usuario.nomeUsuario),
+                new Claim(ClaimTypes.Email, usuario.email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

@@ -56,6 +56,13 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
                 .WithMany(s => s.entrevistado)
                 .HasForeignKey(r => r.idRendaFamiliar)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            //Relação com a tabela de Paciente 
+            builder.HasOne(p => p.pesquisaeleitoralmunicipal).WithMany(c => c.entrevistado)
+                .HasConstraintName("fk_pesquisaeleitoralmunicipal_entrevistado")
+                .HasForeignKey(p => p.idPesquisaEleitoralMunicipal)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
         }
     }
 }

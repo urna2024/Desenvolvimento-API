@@ -17,6 +17,12 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
                 .HasColumnName("nomeUsuario")
                 .HasColumnType("varchar(255)");
 
+            // Propriedade email
+            builder.Property(u => u.email)
+                .IsRequired()
+                .HasColumnName("email")
+                .HasColumnType("varchar(255)");
+
             builder.Property(prop => prop.senha)
                 .IsRequired()
                 .HasColumnName("senha")
@@ -40,6 +46,12 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
                 .WithMany(p => p.usuario)
                 .HasForeignKey(r => r.idPerfilUsuario)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Definir a relação com Representante
+            builder.HasMany(s => s.pesquisaeleitoralmunicipal)
+                .WithOne(r => r.usuario)
+                .HasForeignKey(r => r.idUsuario)
+                .OnDelete(DeleteBehavior.Restrict); // Definir o comportamento de deleção
         }
     }
 }

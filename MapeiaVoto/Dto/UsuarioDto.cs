@@ -4,6 +4,7 @@
     {
         public int id { get; set; }
         public string nomeUsuario { get; set; }
+        public string email { get; set; }
         public string senha { get; set; }
         public int idStatus { get; set; }
         public int idPerfilUsuario { get; set; }
