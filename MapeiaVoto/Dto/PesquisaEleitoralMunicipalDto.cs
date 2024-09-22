@@ -2,7 +2,7 @@
 
 namespace MapeiaVoto.Application.Dto
 {
-    public class PesquisaEleitoralDto
+    public class PesquisaEleitoralMunicipalDto
     {
         public int id { get; set; }
         public DateTime dataEntrevista { get; set; }
