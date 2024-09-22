@@ -9,5 +9,6 @@ namespace MapeiaVoto.Domain.Entidades
     public class Genero : BaseEntity
     {
         public string nome { get; set; }
+        public virtual ICollection<Entrevistado> entrevistado { get; set; } = new List<Entrevistado>();
     }
 }

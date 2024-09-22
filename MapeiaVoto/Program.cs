@@ -87,6 +87,9 @@ builder.Services.AddSingleton(new MapperConfiguration(config =>
     config.CreateMap<Usuario, UsuarioModel>();
     config.CreateMap<UsuarioModel, Usuario>();
 
+    config.CreateMap<RendaFamiliar, RendaFamiliarModel>();
+    config.CreateMap<RendaFamiliarModel, RendaFamiliar>();
+
 
 
 }).CreateMapper());
@@ -115,6 +118,8 @@ builder.Services.AddScoped<IBaseRepository<CargoDisputado>, BaseRepository<Cargo
 builder.Services.AddScoped<IBaseService<Usuario>, BaseService<Usuario>>();
 builder.Services.AddScoped<IBaseRepository<Usuario>, BaseRepository<Usuario>>();
 
+builder.Services.AddScoped<IBaseService<RendaFamiliar>, BaseService<RendaFamiliar>>();
+builder.Services.AddScoped<IBaseRepository<RendaFamiliar>, BaseRepository<RendaFamiliar>>();
 
 var app = builder.Build();
 

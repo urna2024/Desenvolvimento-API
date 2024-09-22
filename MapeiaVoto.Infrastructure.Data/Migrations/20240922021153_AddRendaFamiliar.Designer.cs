@@ -4,6 +4,7 @@ using MapeiaVoto.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MapeiaVoto.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(SqlServerContext))]
-    partial class SqlServerContextModelSnapshot : ModelSnapshot
+    [Migration("20240922021153_AddRendaFamiliar")]
+    partial class AddRendaFamiliar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,15 +115,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("dataNascimento");
 
-                    b.Property<int>("idGenero")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idNivelEscolaridade")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idRendaFamiliar")
-                        .HasColumnType("int");
-
                     b.Property<string>("municipio")
                         .IsRequired()
                         .HasColumnType("varchar(100)")
@@ -137,12 +131,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                         .HasColumnName("uf");
 
                     b.HasKey("id");
-
-                    b.HasIndex("idGenero");
-
-                    b.HasIndex("idNivelEscolaridade");
-
-                    b.HasIndex("idRendaFamiliar");
 
                     b.ToTable("Entrevistado", (string)null);
                 });
@@ -326,33 +314,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     b.Navigation("status");
                 });
 
-            modelBuilder.Entity("MapeiaVoto.Domain.Entidades.Entrevistado", b =>
-                {
-                    b.HasOne("MapeiaVoto.Domain.Entidades.Genero", "genero")
-                        .WithMany("entrevistado")
-                        .HasForeignKey("idGenero")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MapeiaVoto.Domain.Entidades.NivelEscolaridade", "nivelescolaridade")
-                        .WithMany("entrevistado")
-                        .HasForeignKey("idNivelEscolaridade")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MapeiaVoto.Domain.Entidades.RendaFamiliar", "rendafamiliar")
-                        .WithMany("entrevistado")
-                        .HasForeignKey("idRendaFamiliar")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("genero");
-
-                    b.Navigation("nivelescolaridade");
-
-                    b.Navigation("rendafamiliar");
-                });
-
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.Usuario", b =>
                 {
                     b.HasOne("MapeiaVoto.Domain.Entidades.PerfilUsuario", "perfilusuario")
@@ -377,16 +338,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     b.Navigation("candidato");
                 });
 
-            modelBuilder.Entity("MapeiaVoto.Domain.Entidades.Genero", b =>
-                {
-                    b.Navigation("entrevistado");
-                });
-
-            modelBuilder.Entity("MapeiaVoto.Domain.Entidades.NivelEscolaridade", b =>
-                {
-                    b.Navigation("entrevistado");
-                });
-
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.PartidoPolitico", b =>
                 {
                     b.Navigation("candidato");
@@ -395,11 +346,6 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.PerfilUsuario", b =>
                 {
                     b.Navigation("usuario");
-                });
-
-            modelBuilder.Entity("MapeiaVoto.Domain.Entidades.RendaFamiliar", b =>
-                {
-                    b.Navigation("entrevistado");
                 });
 
             modelBuilder.Entity("MapeiaVoto.Domain.Entidades.Status", b =>

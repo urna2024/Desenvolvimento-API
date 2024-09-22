@@ -39,6 +39,23 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
             builder.Property(e => e.celular)
                 .HasColumnType("varchar(11)") // Tipo da coluna
                 .HasColumnName("celular"); // Nome da coluna no banco de dados
+
+
+            // Definir a relação com Status
+            builder.HasOne(r => r.genero)
+                .WithMany(s => s.entrevistado)
+                .HasForeignKey(r => r.idGenero)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(r => r.nivelescolaridade)
+                .WithMany(s => s.entrevistado)
+                .HasForeignKey(r => r.idNivelEscolaridade)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(r => r.rendafamiliar)
+                .WithMany(s => s.entrevistado)
+                .HasForeignKey(r => r.idRendaFamiliar)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

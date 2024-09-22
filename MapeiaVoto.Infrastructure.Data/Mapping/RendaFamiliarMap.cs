@@ -1,6 +1,6 @@
 ﻿using MapeiaVoto.Domain.Entidades;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,23 +9,23 @@ using System.Threading.Tasks;
 
 namespace MapeiaVoto.Infrastructure.Data.Mapping
 {
-    public class GeneroMap : IEntityTypeConfiguration<Genero>
+    public class RendaFamiliarMap : IEntityTypeConfiguration<RendaFamiliar>
     {
-        public void Configure(EntityTypeBuilder<Genero> builder)
+        public void Configure(EntityTypeBuilder<RendaFamiliar> builder)
         {
-            builder.ToTable("Genero"); // Nome da tabela no banco
+            builder.ToTable("RendaFamiliar"); // Nome da tabela no banco de dados
             builder.HasKey(e => e.id); // Definição de chave primária
+
 
             builder.Property(e => e.nome)
                 .IsRequired() // Campo requerido
-                .HasColumnType("varchar(20)") // Tipo da coluna
-                .HasColumnName("nome"); // Nome da coluna no banco de dados
-                                        // Definir a relação com Representante
-            builder.HasMany(s => s.entrevistado)
-                .WithOne(r => r.genero)
-                .HasForeignKey(r => r.idGenero)
-                .OnDelete(DeleteBehavior.Restrict); // Definir o comportamento de deleção
+                .HasColumnType("varchar(100)") // Tipo da coluna
+                .HasColumnName("descricao"); // Nome da coluna no banco de dados
 
+            builder.HasMany(s => s.entrevistado)
+                .WithOne(r => r.rendafamiliar)
+                .HasForeignKey(r => r.idRendaFamiliar)
+                .OnDelete(DeleteBehavior.Restrict); // Definir o comportamento de deleção
         }
     }
 }

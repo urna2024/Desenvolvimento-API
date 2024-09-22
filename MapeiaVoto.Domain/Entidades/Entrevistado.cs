@@ -13,5 +13,11 @@ namespace MapeiaVoto.Domain.Entidades
         public string uf { get; set; }
         public string municipio { get; set; }
         public string? celular { get; set; }
+        public int idGenero { get; set; }
+        public virtual Genero genero { get; set; }
+        public int idNivelEscolaridade { get; set; }
+        public virtual NivelEscolaridade nivelescolaridade { get; set; }
+        public int idRendaFamiliar { get; set; }
+        public virtual RendaFamiliar rendafamiliar { get; set; }
     }
 }

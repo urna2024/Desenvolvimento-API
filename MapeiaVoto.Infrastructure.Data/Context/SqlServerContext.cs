@@ -22,6 +22,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
         public DbSet<Candidato> candidato { get; set; }
         public DbSet<CargoDisputado> cargodisputado { get; set; }
         public DbSet<Usuario> usuario { get; set; }
+        public DbSet<RendaFamiliar> rendafamiliar { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -47,6 +48,7 @@ namespace MapeiaVoto.Infrastructure.Data.Context
             modelBuilder.ApplyConfiguration(new CandidatoMap());
             modelBuilder.ApplyConfiguration(new CargoDisputadoMap());
             modelBuilder.ApplyConfiguration(new UsuarioMap());
+            modelBuilder.ApplyConfiguration(new RendaFamiliarMap());
         }
     }
 
