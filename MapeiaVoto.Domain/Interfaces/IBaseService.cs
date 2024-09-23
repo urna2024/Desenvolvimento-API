@@ -27,6 +27,7 @@ namespace MapeiaVoto.Domain.Interfaces
          string includeProperties = null,
          int? take = null)
          where TModel : class;
+       
     }
 }
 

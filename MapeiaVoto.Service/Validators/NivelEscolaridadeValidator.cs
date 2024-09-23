@@ -12,14 +12,10 @@ namespace MapeiaVoto.Service.Validators
     {
         public NivelEscolaridadeValidator()
         {
-            // Nome não pode ser vazio
+            // Validação para o campo 'nome'
             RuleFor(p => p.nome)
-                .NotEmpty().WithMessage("Informe o nome do Nível Escolar!")
-                .NotNull().WithMessage("Informe o nome do Nível Escolar!")
-                .MaximumLength(100).WithMessage("O nome do Nível Escolar pode ter no máximo 100 caracteres.");
-
-           
-
+                .NotEmpty().WithMessage("O nome do Nível de Escolaridade é obrigatório.")  // Verifica se o nome não está vazio
+                .Length(1, 100).WithMessage("O nome do Nível de Escolaridade pode ter entre 1 e 100 caracteres.");
 
         }
     }

@@ -9,6 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MapeiaVoto.Domain.Interfaces;
+using MapeiaVoto.Service.Services;
+using MapeiaVoto.Application.Models;
 
 namespace MapeiaVoto.Application.Controllers
 {
@@ -17,11 +20,33 @@ namespace MapeiaVoto.Application.Controllers
     public class PesquisaEleitoralController : ControllerBase
     {
         private readonly SqlServerContext _context;
+        private IBaseService<PesquisaEleitoralMunicipal> _baseService;
 
-        public PesquisaEleitoralController(SqlServerContext context)
+        public PesquisaEleitoralController(SqlServerContext context, IBaseService<PesquisaEleitoralMunicipal> baseService)
         {
             _context = context;
+            _baseService = baseService;
         }
+
+
+
+
+        private IActionResult Execute(Func<object> func)
+        {
+            try
+            {
+                var result = func();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
+
+
+
+
 
         // Criar uma nova pesquisa eleitoral
         [HttpPost]
@@ -118,6 +143,33 @@ namespace MapeiaVoto.Application.Controllers
                 }
             }
         }
+
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<PesquisaEleitoralMunicipal>>> GetAllPesquisasEleitorais()
+        {
+            try
+            {
+                var pesquisas = await _context.pesquisaeleitoralmunicipal
+                    .Include(p => p.entrevistado) // Inclui os entrevistados na pesquisa
+                    .Include(p => p.status) // Inclui o status da pesquisa
+                    .Include(p => p.candidatoPrefeito) // Inclui o candidato a prefeito, se houver
+                    .Include(p => p.candidatoVereador) // Inclui o candidato a vereador, se houver
+                    .ToListAsync();
+
+                if (pesquisas == null || pesquisas.Count == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                return Ok(pesquisas);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar as pesquisas eleitorais: {ex.Message}");
+            }
+        }
+
 
         // Buscar dados básicos de todas as pesquisas
         [HttpGet("dadosBasicos")]
@@ -372,5 +424,219 @@ namespace MapeiaVoto.Application.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar os dados completos da pesquisa eleitoral: {ex.Message}");
             }
         }
+
+
+        [HttpGet("resultados/prefeitos")]
+        public async Task<ActionResult<object>> GetResultadosPrefeitos()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var resultados = await _context.pesquisaeleitoralmunicipal
+                    .Where(p => p.idCandidatoPrefeito != null && p.votoBrancoNulo == false && p.votoIndeciso == false)
+                    .GroupBy(p => p.candidatoPrefeito.nomeCompleto)
+                    .Select(g => new
+                    {
+                        CandidatoPrefeito = g.Key,
+                        TotalVotos = g.Count(),
+                        PercentualVotos = (double)g.Count() / totalVotos * 100
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    ResultadosPrefeitos = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto para prefeito: {ex.Message}");
+            }
+        }
+
+        [HttpGet("resultados/vereadores")]
+        public async Task<ActionResult<object>> GetResultadosVereadores()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var resultados = await _context.pesquisaeleitoralmunicipal
+                    .Where(p => p.idCandidatoVereador != null && p.votoBrancoNulo == false && p.votoIndeciso == false)
+                    .GroupBy(p => p.candidatoVereador.nomeCompleto)
+                    .Select(g => new
+                    {
+                        CandidatoVereador = g.Key,
+                        TotalVotos = g.Count(),
+                        PercentualVotos = (double)g.Count() / totalVotos * 100
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    ResultadosVereadores = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto para vereador: {ex.Message}");
+            }
+        }
+
+        [HttpGet("resultados/indecisos-brancos-nulos")]
+        public async Task<ActionResult<object>> GetVotosIndecisosBrancosNulos()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var votosIndecisos = await _context.pesquisaeleitoralmunicipal
+                    .CountAsync(p => p.votoIndeciso == true);
+                var votosBrancosNulos = await _context.pesquisaeleitoralmunicipal
+                    .CountAsync(p => p.votoBrancoNulo == true);
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    VotosIndecisos = votosIndecisos,
+                    PercentualIndecisos = (double)votosIndecisos / totalVotos * 100,
+                    VotosBrancosNulos = votosBrancosNulos,
+                    PercentualBrancosNulos = (double)votosBrancosNulos / totalVotos * 100
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados dos votos indecisos, brancos e nulos: {ex.Message}");
+            }
+        }
+
+        [HttpGet("resultados/renda-familiar")]
+        public async Task<ActionResult<object>> GetResultadosPorRendaFamiliar()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var resultados = await _context.pesquisaeleitoralmunicipal
+                    .Include(p => p.entrevistado)
+                    .Where(p => p.entrevistado.FirstOrDefault().idRendaFamiliar != null)
+                    .GroupBy(p => p.entrevistado.FirstOrDefault().rendafamiliar.nome)
+                    .Select(g => new
+                    {
+                        RendaFamiliar = g.Key,
+                        TotalVotos = g.Count(),
+                        PercentualVotos = (double)g.Count() / totalVotos * 100
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    ResultadosPorRendaFamiliar = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto por renda familiar: {ex.Message}");
+            }
+        }
+
+        [HttpGet("resultados/genero")]
+        public async Task<ActionResult<object>> GetResultadosPorGenero()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var resultados = await _context.pesquisaeleitoralmunicipal
+                    .Include(p => p.entrevistado)
+                    .Where(p => p.entrevistado.FirstOrDefault().idGenero != null)
+                    .GroupBy(p => p.entrevistado.FirstOrDefault().genero.nome)
+                    .Select(g => new
+                    {
+                        Genero = g.Key,
+                        TotalVotos = g.Count(),
+                        PercentualVotos = (double)g.Count() / totalVotos * 100
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    ResultadosPorGenero = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto por gênero: {ex.Message}");
+            }
+        }
+
+
+        [HttpGet("resultados/nivel-escolaridade")]
+        public async Task<ActionResult<object>> GetResultadosPorNivelEscolaridade()
+        {
+            try
+            {
+                var totalVotos = await _context.pesquisaeleitoralmunicipal.CountAsync();
+
+                if (totalVotos == 0)
+                {
+                    return NotFound("Nenhuma pesquisa eleitoral encontrada.");
+                }
+
+                var resultados = await _context.pesquisaeleitoralmunicipal
+                    .Include(p => p.entrevistado)
+                    .Where(p => p.entrevistado.FirstOrDefault().idNivelEscolaridade != null)
+                    .GroupBy(p => p.entrevistado.FirstOrDefault().nivelescolaridade.nome)
+                    .Select(g => new
+                    {
+                        NivelEscolaridade = g.Key,
+                        TotalVotos = g.Count(),
+                        PercentualVotos = (double)g.Count() / totalVotos * 100
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalEntrevistas = totalVotos,
+                    ResultadosPorNivelEscolaridade = resultados
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto por nível de escolaridade: {ex.Message}");
+            }
+        }
+
+
     }
 }

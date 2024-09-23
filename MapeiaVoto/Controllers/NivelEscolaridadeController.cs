@@ -70,6 +70,13 @@ namespace MapeiaVoto.Application.Controllers
 
             return Execute(() => _baseService.GetById<NivelEscolaridadeModel>(id));
         }
+
+
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            return Execute(() => _baseService.Get<NivelEscolaridadeModel>());
+        }
     }
 }
 

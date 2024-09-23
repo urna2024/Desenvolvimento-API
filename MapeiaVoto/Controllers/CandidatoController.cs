@@ -296,5 +296,30 @@ namespace MapeiaVoto.Application.Controllers
                 }
             }
         }
+
+        [HttpGet]
+        public async Task<ActionResult<List<Candidato>>> GetAllCandidatos()
+        {
+            try
+            {
+                var candidatos = await _context.candidato
+                    .Include(c => c.partidopolitico) // Inclui o relacionamento com PartidoPolítico
+                    .Include(c => c.cargodisputado)  // Inclui o relacionamento com CargoDisputado
+                    .Include(c => c.status)          // Inclui o relacionamento com Status
+                    .ToListAsync();
+
+                if (candidatos == null || candidatos.Count == 0)
+                {
+                    return NotFound("Nenhum candidato encontrado.");
+                }
+
+                return Ok(candidatos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar candidatos: {ex.Message}");
+            }
+        }
+
     }
 }

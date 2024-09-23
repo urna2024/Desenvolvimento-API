@@ -16,6 +16,7 @@ namespace MapeiaVoto.Application.Controllers
         {
             _baseService = baseService;
         }
+
         private IActionResult Execute(Func<object> func)
         {
             try
@@ -70,5 +71,12 @@ namespace MapeiaVoto.Application.Controllers
 
             return Execute(() => _baseService.GetById<RendaFamiliarModel>(id));
         }
+
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            return Execute(() => _baseService.Get<RendaFamiliarModel>());
+        }
     }
+
 }
