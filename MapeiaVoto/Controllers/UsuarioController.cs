@@ -2,6 +2,7 @@
 using MapeiaVoto.Domain.Entidades;
 using MapeiaVoto.Domain.Interfaces;
 using MapeiaVoto.Infrastructure.Data.Context;
+using MapeiaVoto.Service.Validators; // Importando o Validator do local correto
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,19 +11,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SGFME.Application.Controllers
+namespace MapeiaVoto.Application.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class UsuarioController : ControllerBase
     {
-        private IBaseService<Usuario> _baseService;
+        private readonly IBaseService<Usuario> _baseService;
         private readonly SqlServerContext _context;
+        private readonly UsuarioValidator _usuarioValidator; // Usando o Validator da camada de service
 
         public UsuarioController(IBaseService<Usuario> baseService, SqlServerContext context)
         {
             _baseService = baseService;
             _context = context;
+            _usuarioValidator = new UsuarioValidator(_context); // Passando o contexto ao instanciar o Validator
         }
 
         private IActionResult Execute(Func<object> func)
@@ -45,25 +48,22 @@ namespace SGFME.Application.Controllers
             {
                 try
                 {
-                    // Verificar se os IDs de chaves estrangeiras existem
-                    if (!_context.status.Any(st => st.id == request.idStatus))
-                    {
-                        return BadRequest($"Status com id {request.idStatus} não encontrado.");
-                    }
-                    if (!_context.perfilusuario.Any(pu => pu.id == request.idPerfilUsuario))
-                    {
-                        return BadRequest($"Perfil de Usuário com id {request.idPerfilUsuario} não encontrado.");
-                    }
-
                     var novoUsuario = new Usuario
                     {
-                        nomeUsuario = request.nomeUsuario, // Incluído nomeUsuario
-                        email = request.email, // Incluído email
+                        nomeUsuario = request.nomeUsuario,
+                        email = request.email,
                         senha = request.senha,
                         idStatus = request.idStatus,
                         idPerfilUsuario = request.idPerfilUsuario,
-                        precisaTrocarSenha = true // Definir como true para que o usuário troque a senha no primeiro login
+                        precisaTrocarSenha = true
                     };
+
+                    // Validar o novoUsuario antes de salvar
+                    var validationResult = _usuarioValidator.Validate(novoUsuario);
+                    if (!validationResult.IsValid)
+                    {
+                        return BadRequest(validationResult.Errors);
+                    }
 
                     _context.usuario.Add(novoUsuario);
                     await _context.SaveChangesAsync();
@@ -83,6 +83,48 @@ namespace SGFME.Application.Controllers
                     var fullExceptionMessage = $"Erro ao criar Usuario: {ex.Message} | Exceção interna: {innerExceptionMessage}";
                     Console.WriteLine(fullExceptionMessage);
                     return StatusCode(StatusCodes.Status500InternalServerError, fullExceptionMessage);
+                }
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, UsuarioDto request)
+        {
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var usuario = await _context.usuario
+                        .FirstOrDefaultAsync(u => u.id == id);
+
+                    if (usuario == null)
+                    {
+                        return NotFound("Usuário não encontrado.");
+                    }
+
+                    usuario.nomeUsuario = request.nomeUsuario;
+                    usuario.email = request.email;
+                    usuario.senha = request.senha;
+                    usuario.idStatus = request.idStatus;
+                    usuario.idPerfilUsuario = request.idPerfilUsuario;
+
+                    // Validar o usuário antes de salvar
+                    var validationResult = _usuarioValidator.Validate(usuario);
+                    if (!validationResult.IsValid)
+                    {
+                        return BadRequest(validationResult.Errors);
+                    }
+
+                    _context.usuario.Update(usuario);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(usuario);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Erro ao atualizar Usuário.");
                 }
             }
         }
@@ -114,40 +156,7 @@ namespace SGFME.Application.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UsuarioDto request)
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    var usuario = await _context.usuario
-                        .FirstOrDefaultAsync(u => u.id == id);
-
-                    if (usuario == null)
-                    {
-                        return NotFound("Usuário não encontrado.");
-                    }
-
-                    usuario.nomeUsuario = request.nomeUsuario; // Atualizando nomeUsuario
-                    usuario.email = request.email; // Atualizando email
-                    usuario.senha = request.senha;
-                    usuario.idStatus = request.idStatus;
-                    usuario.idPerfilUsuario = request.idPerfilUsuario;
-
-                    _context.usuario.Update(usuario);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return Ok(usuario);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Erro ao atualizar Usuário.");
-                }
-            }
-        }
+        
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
