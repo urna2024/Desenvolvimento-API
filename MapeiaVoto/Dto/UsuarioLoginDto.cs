@@ -1,4 +1,4 @@
-﻿namespace partymanager.Application.Dto
+﻿namespace MapeiaVoto.Application.Dto
 {
     public class UsuarioLoginDto
     {

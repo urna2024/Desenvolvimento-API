@@ -2,6 +2,8 @@
 using MapeiaVoto.Domain.Entidades;
 using MapeiaVoto.Domain.Interfaces;
 using MapeiaVoto.Infrastructure.Data.Context;
+using MapeiaVoto.Service.Validators; // Adicionado
+using FluentValidation; // Adicionado
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,11 +20,13 @@ namespace MapeiaVoto.Application.Controllers
     {
         private readonly IBaseService<Candidato> _baseService;
         private readonly SqlServerContext _context;
+        private readonly CandidatoValidator _candidatoValidator; // Adicionado Validator
 
         public CandidatoController(IBaseService<Candidato> baseService, SqlServerContext context)
         {
             _baseService = baseService;
             _context = context;
+            _candidatoValidator = new CandidatoValidator(); // Instanciando o Validator
         }
 
         private IActionResult Execute(Func<object> func)
@@ -38,7 +42,6 @@ namespace MapeiaVoto.Application.Controllers
             }
         }
 
-        // Criar um novo candidato
         [HttpPost]
         public async Task<ActionResult<Candidato>> Create(CandidadoDto request)
         {
@@ -46,23 +49,9 @@ namespace MapeiaVoto.Application.Controllers
             {
                 try
                 {
-                    // Verificar se as chaves estrangeiras existem
-                    if (!_context.status.Any(s => s.id == request.idStatus))
+                    // Mapeia o DTO para a entidade Candidato
+                    var candidato = new Candidato
                     {
-                        return BadRequest($"Status com id {request.idStatus} não encontrado.");
-                    }
-                    if (!_context.partidopolitico.Any(pp => pp.id == request.idPartidoPolitico))
-                    {
-                        return BadRequest($"Partido Político com id {request.idPartidoPolitico} não encontrado.");
-                    }
-                    if (!_context.cargodisputado.Any(cd => cd.id == request.idCargoDisputado))
-                    {
-                        return BadRequest($"Cargo Disputado com id {request.idCargoDisputado} não encontrado.");
-                    }
-
-                    var novoCandidato = new Candidato
-                    {
-                        id = request.id,
                         nomeCompleto = request.nomeCompleto,
                         nomeUrna = request.nomeUrna,
                         dataNascimento = request.dataNascimento.Date,
@@ -74,7 +63,14 @@ namespace MapeiaVoto.Application.Controllers
                         idCargoDisputado = request.idCargoDisputado
                     };
 
-                    _context.candidato.Add(novoCandidato);
+                    // Validação da entidade Candidato
+                    var validationResult = _candidatoValidator.Validate(candidato);
+                    if (!validationResult.IsValid)
+                    {
+                        return BadRequest(validationResult.Errors);
+                    }
+
+                    _context.candidato.Add(candidato);
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -82,7 +78,7 @@ namespace MapeiaVoto.Application.Controllers
                         .Include(c => c.status)
                         .Include(c => c.partidopolitico)
                         .Include(c => c.cargodisputado)
-                        .FirstOrDefaultAsync(c => c.id == novoCandidato.id);
+                        .FirstOrDefaultAsync(c => c.id == candidato.id);
 
                     return CreatedAtAction(nameof(Create), new { id = createdCandidato.id }, createdCandidato);
                 }
@@ -149,7 +145,6 @@ namespace MapeiaVoto.Application.Controllers
         }
 
 
-        // Atualizar um candidato existente
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CandidadoDto request)
         {
@@ -157,36 +152,74 @@ namespace MapeiaVoto.Application.Controllers
             {
                 try
                 {
-                    var candidato = await _context.candidato.FirstOrDefaultAsync(c => c.id == id);
+                    // Verificar se o PartidoPolitico existe
+                    var partidoExistente = await _context.partidopolitico.FirstOrDefaultAsync(pp => pp.id == request.idPartidoPolitico);
+                    if (partidoExistente == null)
+                    {
+                        return BadRequest($"Partido Político com id {request.idPartidoPolitico} não encontrado.");
+                    }
 
-                    if (candidato == null)
+                    // Verificar se o CargoDisputado existe
+                    var cargoExistente = await _context.cargodisputado.FirstOrDefaultAsync(cd => cd.id == request.idCargoDisputado);
+                    if (cargoExistente == null)
+                    {
+                        return BadRequest($"Cargo Disputado com id {request.idCargoDisputado} não encontrado.");
+                    }
+
+                    // Verificar se o Status existe
+                    var statusExistente = await _context.status.FirstOrDefaultAsync(s => s.id == request.idStatus);
+                    if (statusExistente == null)
+                    {
+                        return BadRequest($"Status com id {request.idStatus} não encontrado.");
+                    }
+
+                    // Buscar candidato existente no banco de dados
+                    var candidatoExistente = await _context.candidato.FirstOrDefaultAsync(c => c.id == id);
+                    if (candidatoExistente == null)
                     {
                         return NotFound("Candidato não encontrado.");
                     }
 
-                    candidato.nomeCompleto = request.nomeCompleto;
-                    candidato.nomeUrna = request.nomeUrna;
-                    candidato.dataNascimento = request.dataNascimento.Date;
-                    candidato.uf = request.uf;
-                    candidato.municipio = request.municipio;
-                    candidato.foto = request.foto;
-                    candidato.idStatus = request.idStatus;
-                    candidato.idPartidoPolitico = request.idPartidoPolitico;
-                    candidato.idCargoDisputado = request.idCargoDisputado;
+                    // Atualizar os dados do candidato existente com os novos valores
+                    candidatoExistente.nomeCompleto = request.nomeCompleto;
+                    candidatoExistente.nomeUrna = request.nomeUrna;
+                    candidatoExistente.dataNascimento = request.dataNascimento.Date;
+                    candidatoExistente.uf = request.uf;
+                    candidatoExistente.municipio = request.municipio;
+                    candidatoExistente.foto = request.foto;
+                    candidatoExistente.idStatus = request.idStatus;
+                    candidatoExistente.idPartidoPolitico = request.idPartidoPolitico;
+                    candidatoExistente.idCargoDisputado = request.idCargoDisputado;
 
-                    _context.candidato.Update(candidato);
+                    // Validação do objeto candidato atualizado
+                    var validationResult = _candidatoValidator.Validate(candidatoExistente);
+                    if (!validationResult.IsValid)
+                    {
+                        return BadRequest(validationResult.Errors);
+                    }
+
+                    // Atualizar o candidato no banco de dados
+                    _context.candidato.Update(candidatoExistente);
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return Ok(candidato);
+                    return Ok(candidatoExistente);
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Erro ao atualizar candidato.");
+
+                    // Captura a mensagem detalhada da exceção
+                    var innerExceptionMessage = ex.InnerException?.Message ?? "Nenhuma exceção interna";
+                    var fullExceptionMessage = $"Erro ao atualizar candidato: {ex.Message} | Exceção interna: {innerExceptionMessage}";
+
+                    return StatusCode(StatusCodes.Status500InternalServerError, fullExceptionMessage);
                 }
             }
         }
+
+
+
 
         // Deletar um candidato por ID
         [HttpDelete("{id}")]

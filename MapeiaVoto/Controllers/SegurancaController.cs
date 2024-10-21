@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 using MapeiaVoto.Domain.Entidades;
 using MapeiaVoto.Application.Dto;
 using MapeiaVoto.Infrastructure.Data.Context;
-using partymanager.Application.Dto;
+using FluentValidation; // Para usar o FluentValidation
 
 [Route("api/[controller]")]
 [ApiController]
 public class SegurancaController : ControllerBase
 {
     private readonly IConfiguration _config;
-    private readonly SqlServerContext _context; // Aqui estou assumindo que você está usando `SqlServerContext`
+    private readonly SqlServerContext _context;
 
     public SegurancaController(IConfiguration config, SqlServerContext context)
     {
@@ -34,14 +34,11 @@ public class SegurancaController : ControllerBase
             // Verifica se o usuário precisa trocar a senha
             if (usuario.precisaTrocarSenha)
             {
-                // Inclua o ID do usuário na resposta
                 return Ok(new { mensagem = "Troca de senha obrigatória.", precisaTrocarSenha = true, id = usuario.id });
             }
 
             // Gerar o token JWT se o usuário for válido e não precisar trocar a senha
             var tokenString = GerarTokenJWT(usuario);
-
-            // Inclua o ID do usuário na resposta junto com o token
             return Ok(new { token = tokenString, id = usuario.id });
         }
         else
@@ -53,11 +50,26 @@ public class SegurancaController : ControllerBase
     [HttpPost("TrocarSenha")]
     public async Task<IActionResult> TrocarSenha([FromBody] UsuarioTrocarSenhaDto senhaDto)
     {
+        // Validação do DTO com FluentValidation
+        var validator = new UsuarioTrocarSenhaDtoValidator();
+        var validationResult = validator.Validate(senhaDto);
+
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.Errors); // Retorna os erros de validação
+        }
+
         var usuario = await _context.usuario.FirstOrDefaultAsync(u => u.id == senhaDto.id);
 
         if (usuario == null)
         {
             return NotFound("Usuário não encontrado.");
+        }
+
+        // Verifica se o usuário está autorizado a trocar a senha
+        if (!usuario.precisaTrocarSenha)
+        {
+            return BadRequest("Usuário não está autorizado a trocar a senha.");
         }
 
         // Verifica se a senha atual está correta
@@ -77,6 +89,7 @@ public class SegurancaController : ControllerBase
         return Ok("Senha alterada com sucesso.");
     }
 
+
     private string GerarTokenJWT(Usuario usuario)
     {
         var issuer = _config["Jwt:Issuer"];
@@ -89,14 +102,14 @@ public class SegurancaController : ControllerBase
             new Claim(JwtRegisteredClaimNames.Sub, usuario.email),
             new Claim(JwtRegisteredClaimNames.Email, usuario.email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("nome", usuario.nomeUsuario) // O nome será adicionado ao token JWT
+            new Claim("nome", usuario.nomeUsuario)
         };
 
         var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(120), // Token válido por 120 minutos
+            expires: DateTime.Now.AddMinutes(120),
             signingCredentials: credentials
         );
 
@@ -106,14 +119,13 @@ public class SegurancaController : ControllerBase
 
     private async Task<Usuario> ValidarUsuarioAsync(string email, string senha)
     {
-        // Busca o usuário no banco de dados através do email
         var usuario = await _context.usuario.FirstOrDefaultAsync(u => u.email == email);
 
-        if (usuario != null && usuario.senha == senha) // Verifica se a senha está correta
+        if (usuario != null && usuario.senha == senha)
         {
-            return usuario; // Retorna o usuário se o email e a senha forem válidos
+            return usuario;
         }
 
-        return null; // Retorna null se a validação falhar
+        return null;
     }
 }

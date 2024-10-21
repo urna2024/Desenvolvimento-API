@@ -44,8 +44,5 @@ namespace MapeiaVoto.Service.Validators
             RuleFor(c => c.idPartidoPolitico)
                 .NotEmpty().WithMessage("O partido político é obrigatório.");
         }
-
-       
-      
     }
 }
