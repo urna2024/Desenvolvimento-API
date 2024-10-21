@@ -17,7 +17,7 @@ namespace MapeiaVoto.Service.Validators
             RuleFor(p => p.sigla)
                 .NotEmpty().WithMessage("Informe a sigla do Partido!")
                 .NotNull().WithMessage("Informe a sigla do Partido!")
-                .MaximumLength(10).WithMessage("A sigla do Partido pode ter no máximo 10 caracteres.");
+                .MaximumLength(12).WithMessage("A sigla do Partido pode ter no máximo 12 caracteres.");
 
             
         }

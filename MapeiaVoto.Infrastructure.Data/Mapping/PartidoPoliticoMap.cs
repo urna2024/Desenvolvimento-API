@@ -18,7 +18,7 @@ namespace MapeiaVoto.Infrastructure.Data.Mapping
 
             builder.Property(e => e.sigla)
                 .IsRequired() // Campo requerido
-                .HasColumnType("varchar(10)") // Tipo da coluna
+                .HasColumnType("varchar(12)") // Tipo da coluna
                 .HasColumnName("sigla"); // Nome da coluna no banco de dados
 
             builder.HasMany(s => s.candidato)

@@ -70,26 +70,52 @@ namespace MapeiaVoto.Application.Controllers
                         return BadRequest($"Status com ID {request.idStatus} não encontrado.");
                     }
 
-                    // Verificar se os candidatos existem
-                    Candidato candidatoPrefeito = null;
-                    Candidato candidatoVereador = null;
+                    // Verificar se os candidatos existem e carregar todos os dados
+                    CandidadoDto candidatoPrefeitoDto = null;
+                    CandidadoDto candidatoVereadorDto = null;
 
                     if (request.idCandidatoPrefeito.HasValue)
                     {
-                        candidatoPrefeito = await _context.candidato.FirstOrDefaultAsync(c => c.id == request.idCandidatoPrefeito);
+                        var candidatoPrefeito = await _context.candidato.FirstOrDefaultAsync(c => c.id == request.idCandidatoPrefeito);
                         if (candidatoPrefeito == null)
                         {
                             return BadRequest($"Candidato a prefeito com ID {request.idCandidatoPrefeito} não encontrado.");
                         }
+                        candidatoPrefeitoDto = new CandidadoDto
+                        {
+                            id = candidatoPrefeito.id,
+                            nomeCompleto = candidatoPrefeito.nomeCompleto,
+                            nomeUrna = candidatoPrefeito.nomeUrna,
+                            dataNascimento = candidatoPrefeito.dataNascimento,
+                            uf = candidatoPrefeito.uf,
+                            municipio = candidatoPrefeito.municipio,
+                            foto = candidatoPrefeito.foto,
+                            idStatus = candidatoPrefeito.idStatus,
+                            idPartidoPolitico = candidatoPrefeito.idPartidoPolitico,
+                            idCargoDisputado = candidatoPrefeito.idCargoDisputado
+                        };
                     }
 
                     if (request.idCandidatoVereador.HasValue)
                     {
-                        candidatoVereador = await _context.candidato.FirstOrDefaultAsync(c => c.id == request.idCandidatoVereador);
+                        var candidatoVereador = await _context.candidato.FirstOrDefaultAsync(c => c.id == request.idCandidatoVereador);
                         if (candidatoVereador == null)
                         {
                             return BadRequest($"Candidato a vereador com ID {request.idCandidatoVereador} não encontrado.");
                         }
+                        candidatoVereadorDto = new CandidadoDto
+                        {
+                            id = candidatoVereador.id,
+                            nomeCompleto = candidatoVereador.nomeCompleto,
+                            nomeUrna = candidatoVereador.nomeUrna,
+                            dataNascimento = candidatoVereador.dataNascimento,
+                            uf = candidatoVereador.uf,
+                            municipio = candidatoVereador.municipio,
+                            foto = candidatoVereador.foto,
+                            idStatus = candidatoVereador.idStatus,
+                            idPartidoPolitico = candidatoVereador.idPartidoPolitico,
+                            idCargoDisputado = candidatoVereador.idCargoDisputado
+                        };
                     }
 
                     // Verificar se há apenas um entrevistado na pesquisa
@@ -124,9 +150,8 @@ namespace MapeiaVoto.Application.Controllers
                         idCandidatoVereador = request.idCandidatoVereador,
                         idUsuario = request.idUsuario,
                         idStatus = request.idStatus,
-                        entrevistado = new List<Entrevistado> { novoEntrevistado } // Adicionando o entrevistado à lista
+                        entrevistado = new List<Entrevistado> { novoEntrevistado }
                     };
-
 
                     // Adicionar o novo entrevistado e a pesquisa no contexto
                     _context.entrevistado.Add(novoEntrevistado);
@@ -134,7 +159,16 @@ namespace MapeiaVoto.Application.Controllers
                     await _context.SaveChangesAsync();
 
                     await transaction.CommitAsync();
-                    return CreatedAtAction(nameof(Create), new { id = novaPesquisa.id }, novaPesquisa);
+
+                    // Retornar a pesquisa com todos os dados completos dos candidatos
+                    var response = new
+                    {
+                        novaPesquisa,
+                        CandidatoPrefeito = candidatoPrefeitoDto,
+                        CandidatoVereador = candidatoVereadorDto
+                    };
+
+                    return CreatedAtAction(nameof(Create), new { id = novaPesquisa.id }, response);
                 }
                 catch (Exception ex)
                 {
@@ -143,6 +177,8 @@ namespace MapeiaVoto.Application.Controllers
                 }
             }
         }
+
+
 
 
         [HttpGet]
@@ -634,6 +670,79 @@ namespace MapeiaVoto.Application.Controllers
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao gerar os resultados das intenções de voto por nível de escolaridade: {ex.Message}");
+            }
+        }
+
+        // Endpoint para buscar candidatos a prefeito de acordo com UF e Município e incluir a sigla do partido
+        [HttpGet("prefeitos")]
+        public async Task<ActionResult<IEnumerable<object>>> GetPrefeitos([FromQuery] string uf, [FromQuery] string municipio)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(uf) || string.IsNullOrWhiteSpace(municipio))
+                {
+                    return BadRequest("UF e município são obrigatórios.");
+                }
+
+                var prefeitos = await _context.candidato
+                    .Include(c => c.partidopolitico) // Inclui o partido político relacionado
+                    .Where(c => c.cargodisputado.nome == "Prefeito" && c.uf == uf && c.municipio == municipio)
+                    .Select(c => new
+                    {
+                        c.nomeCompleto,
+                        c.nomeUrna,
+                        Partido = c.partidopolitico.nome,
+                        SiglaPartido = c.partidopolitico.sigla
+                    })
+                    .ToListAsync();
+
+                if (!prefeitos.Any())
+                {
+                    return NotFound("Nenhum candidato a prefeito encontrado para o UF e município especificados.");
+                }
+
+                return Ok(prefeitos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar candidatos a prefeito: {ex.Message}");
+            }
+        }
+
+
+        // Endpoint para buscar candidatos a vereador de acordo com UF e Município e incluir a sigla do partido
+        [HttpGet("vereadores")]
+        public async Task<ActionResult<IEnumerable<object>>> GetVereadores([FromQuery] string uf, [FromQuery] string municipio)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(uf) || string.IsNullOrWhiteSpace(municipio))
+                {
+                    return BadRequest("UF e município são obrigatórios.");
+                }
+
+                var vereadores = await _context.candidato
+                    .Include(c => c.partidopolitico) // Inclui o partido político relacionado
+                    .Where(c => c.cargodisputado.nome == "Vereador" && c.uf == uf && c.municipio == municipio)
+                    .Select(c => new
+                    {
+                        c.nomeCompleto,
+                        c.nomeUrna,
+                        Partido = c.partidopolitico.nome,
+                        SiglaPartido = c.partidopolitico.sigla
+                    })
+                    .ToListAsync();
+
+                if (!vereadores.Any())
+                {
+                    return NotFound("Nenhum candidato a vereador encontrado para o UF e município especificados.");
+                }
+
+                return Ok(vereadores);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar candidatos a vereador: {ex.Message}");
             }
         }
 

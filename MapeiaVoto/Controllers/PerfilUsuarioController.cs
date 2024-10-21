@@ -70,5 +70,11 @@ namespace MapeiaVoto.Application.Controllers
 
             return Execute(() => _baseService.GetById<PerfilUsuarioModel>(id));
         }
+
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            return Execute(() => _baseService.Get<PerfilUsuarioModel>());
+        }
     }
 }

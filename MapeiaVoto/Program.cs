@@ -83,7 +83,6 @@ builder.Services.AddSingleton(new MapperConfiguration(config =>
     config.CreateMap<CargoDisputado, CargoDisputadoModel>();
     config.CreateMap<CargoDisputadoModel, CargoDisputado>();
 
-
     config.CreateMap<Usuario, UsuarioModel>();
     config.CreateMap<UsuarioModel, Usuario>();
 
@@ -98,8 +97,6 @@ builder.Services.AddSingleton(new MapperConfiguration(config =>
 
     config.CreateMap<NivelEscolaridade, NivelEscolaridadeModel>();
     config.CreateMap<NivelEscolaridadeModel, NivelEscolaridade>();
-
-
 
 }).CreateMapper());
 
@@ -162,33 +159,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
-
-//var app = builder.Build();
-
-//// Configuração do pipeline de requisição
-
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseDeveloperExceptionPage();
-//    app.UseSwagger();
-//    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "MapeiaVoto API v1"));
-//}
-
-//app.UseHttpsRedirection();
-//app.UseStaticFiles(); // Serve arquivos estáticos da pasta wwwroot por padrão
-
-//app.UseRouting();
-
-//// Ativando CORS
-//app.UseCors("CorsPolicy");
-
-//// Ativando Autenticação e Autorização
-//app.UseAuthentication();
-//app.UseAuthorization();
-
-//app.MapControllers();
-
-//app.Run();
-

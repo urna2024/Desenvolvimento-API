@@ -65,7 +65,7 @@ namespace MapeiaVoto.Application.Controllers
                         id = request.id,
                         nomeCompleto = request.nomeCompleto,
                         nomeUrna = request.nomeUrna,
-                        dataNascimento = request.dataNascimento,
+                        dataNascimento = request.dataNascimento.Date,
                         uf = request.uf,
                         municipio = request.municipio,
                         foto = request.foto,
@@ -166,7 +166,7 @@ namespace MapeiaVoto.Application.Controllers
 
                     candidato.nomeCompleto = request.nomeCompleto;
                     candidato.nomeUrna = request.nomeUrna;
-                    candidato.dataNascimento = request.dataNascimento;
+                    candidato.dataNascimento = request.dataNascimento.Date;
                     candidato.uf = request.uf;
                     candidato.municipio = request.municipio;
                     candidato.foto = request.foto;
@@ -297,29 +297,9 @@ namespace MapeiaVoto.Application.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<ActionResult<List<Candidato>>> GetAllCandidatos()
-        {
-            try
-            {
-                var candidatos = await _context.candidato
-                    .Include(c => c.partidopolitico) // Inclui o relacionamento com PartidoPolítico
-                    .Include(c => c.cargodisputado)  // Inclui o relacionamento com CargoDisputado
-                    .Include(c => c.status)          // Inclui o relacionamento com Status
-                    .ToListAsync();
+        
 
-                if (candidatos == null || candidatos.Count == 0)
-                {
-                    return NotFound("Nenhum candidato encontrado.");
-                }
 
-                return Ok(candidatos);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Erro ao buscar candidatos: {ex.Message}");
-            }
-        }
 
     }
 }

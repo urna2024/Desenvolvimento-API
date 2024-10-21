@@ -1,180 +1,119 @@
-﻿using MapeiaVoto.Application.Models;
-using MapeiaVoto.Domain.Entidades;
-using MapeiaVoto.Domain.Interfaces;
-using MapeiaVoto.Infrastructure.Data.Context;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
+using MapeiaVoto.Domain.Entidades;
+using MapeiaVoto.Application.Dto;
+using MapeiaVoto.Infrastructure.Data.Context;
+using partymanager.Application.Dto;
 
-namespace SGFME.Application.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class SegurancaController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SegurancaController : ControllerBase
+    private readonly IConfiguration _config;
+    private readonly SqlServerContext _context; // Aqui estou assumindo que você está usando `SqlServerContext`
+
+    public SegurancaController(IConfiguration config, SqlServerContext context)
     {
-        private readonly IConfiguration _configuration;
-        private IBaseService<Usuario> _service;
-        private readonly ILogger<Usuario> _logger;
-        private readonly SqlServerContext _context;
+        _config = config;
+        _context = context;
+    }
 
-        public SegurancaController(IConfiguration configuration, IBaseService<Usuario> service, ILogger<Usuario> logger, SqlServerContext context)
+    [HttpPost("Login")]
+    public async Task<IActionResult> Login([FromBody] UsuarioLoginDto loginDetalhes)
+    {
+        var usuario = await ValidarUsuarioAsync(loginDetalhes.email, loginDetalhes.senha);
+        if (usuario != null)
         {
-            _configuration = configuration;
-            _service = service;
-            _logger = logger;
-            _context = context;
+            // Verifica se o usuário precisa trocar a senha
+            if (usuario.precisaTrocarSenha)
+            {
+                // Inclua o ID do usuário na resposta
+                return Ok(new { mensagem = "Troca de senha obrigatória.", precisaTrocarSenha = true, id = usuario.id });
+            }
+
+            // Gerar o token JWT se o usuário for válido e não precisar trocar a senha
+            var tokenString = GerarTokenJWT(usuario);
+
+            // Inclua o ID do usuário na resposta junto com o token
+            return Ok(new { token = tokenString, id = usuario.id });
+        }
+        else
+        {
+            return Unauthorized("Email ou senha incorretos.");
+        }
+    }
+
+    [HttpPost("TrocarSenha")]
+    public async Task<IActionResult> TrocarSenha([FromBody] UsuarioTrocarSenhaDto senhaDto)
+    {
+        var usuario = await _context.usuario.FirstOrDefaultAsync(u => u.id == senhaDto.id);
+
+        if (usuario == null)
+        {
+            return NotFound("Usuário não encontrado.");
         }
 
-        // Método de validação de login usando email e senha
-        [HttpPost]
-        [Route("validaLogin")]
-        public IActionResult Login([FromBody] dynamic loginDetalhes)
+        // Verifica se a senha atual está correta
+        if (usuario.senha != senhaDto.senha)
         {
-            string email = loginDetalhes.email;
-            string senha = loginDetalhes.senha;
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(senha))
-            {
-                return BadRequest("Email ou senha não podem estar vazios.");
-            }
-
-            var usuario = ValidarUsuario(email, senha);
-
-            if (usuario != null)
-            {
-                if (usuario.status == null || usuario.status.nome.Trim().ToLower() != "ativo")
-                {
-                    return Unauthorized(new
-                    {
-                        mensagem = "Usuário não está ativo.",
-                        statusUsuario = usuario.status?.nome
-                    });
-                }
-
-                // Verifica se o usuário precisa trocar a senha
-                if (usuario.precisaTrocarSenha)
-                {
-                    return Ok(new
-                    {
-                        mensagem = "Usuário precisa trocar a senha.",
-                        necessitaTrocarSenha = true,
-                        idUsuario = usuario.id
-                    });
-                }
-
-                var usuarioModel = new UsuarioModel
-                {
-                    id = usuario.id,
-                    nomeUsuario = usuario.nomeUsuario,
-                    senha = usuario.senha,
-                    idStatus = usuario.idStatus,
-                    idPerfilUsuario = usuario.idPerfilUsuario
-                };
-
-                var tokenString = GerarTokenJWT(usuarioModel);
-                return Ok(new
-                {
-                    token = tokenString,
-                    id = usuarioModel.id,
-                    nome = usuarioModel.nomeUsuario,
-                    statusUsuario = usuario.status?.nome
-                });
-            }
-            else
-            {
-                return Unauthorized("Email ou senha inválidos.");
-            }
+            return BadRequest("A senha atual está incorreta.");
         }
 
-        [HttpPost]
-        [Route("TrocarSenha")]
-        public async Task<IActionResult> TrocarSenha([FromBody] dynamic senhaDetalhes)
+        // Atualiza a senha e define que não precisa mais trocar
+        usuario.senha = senhaDto.novaSenha;
+        usuario.precisaTrocarSenha = false;
+
+        // Salva as alterações no banco de dados
+        _context.usuario.Update(usuario);
+        await _context.SaveChangesAsync();
+
+        return Ok("Senha alterada com sucesso.");
+    }
+
+    private string GerarTokenJWT(Usuario usuario)
+    {
+        var issuer = _config["Jwt:Issuer"];
+        var audience = _config["Jwt:Audience"];
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
         {
-            if (senhaDetalhes == null)
-            {
-                return BadRequest(new { mensagem = "Dados de senha não fornecidos." });
-            }
+            new Claim(JwtRegisteredClaimNames.Sub, usuario.email),
+            new Claim(JwtRegisteredClaimNames.Email, usuario.email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("nome", usuario.nomeUsuario) // O nome será adicionado ao token JWT
+        };
 
-            int idUsuario;
-            string senhaAtual;
-            string novaSenha;
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: DateTime.Now.AddMinutes(120), // Token válido por 120 minutos
+            signingCredentials: credentials
+        );
 
-            try
-            {
-                idUsuario = senhaDetalhes.idUsuario;
-                senhaAtual = senhaDetalhes.senhaAtual;
-                novaSenha = senhaDetalhes.novaSenha;
-            }
-            catch (Exception)
-            {
-                return BadRequest(new { mensagem = "Dados de senha malformados." });
-            }
+        var tokenHandler = new JwtSecurityTokenHandler();
+        return tokenHandler.WriteToken(token);
+    }
 
-            if (string.IsNullOrEmpty(senhaAtual) || string.IsNullOrEmpty(novaSenha))
-            {
-                return BadRequest(new { mensagem = "A senha atual e a nova senha devem ser fornecidas." });
-            }
+    private async Task<Usuario> ValidarUsuarioAsync(string email, string senha)
+    {
+        // Busca o usuário no banco de dados através do email
+        var usuario = await _context.usuario.FirstOrDefaultAsync(u => u.email == email);
 
-            var usuario = await _context.usuario.FindAsync(idUsuario);
-            if (usuario == null)
-            {
-                return NotFound(new { mensagem = "Usuário não encontrado." });
-            }
-
-            if (usuario.senha != senhaAtual)
-            {
-                return BadRequest(new { mensagem = "Senha atual incorreta." });
-            }
-
-            usuario.senha = novaSenha;
-            usuario.precisaTrocarSenha = false;
-
-            try
-            {
-                _context.usuario.Update(usuario);
-                await _context.SaveChangesAsync();
-                return Ok(new { mensagem = "Senha alterada com sucesso." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Erro ao trocar senha para o usuário {usuario.nomeUsuario}: {ex.Message}");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { mensagem = "Erro ao trocar a senha." });
-            }
+        if (usuario != null && usuario.senha == senha) // Verifica se a senha está correta
+        {
+            return usuario; // Retorna o usuário se o email e a senha forem válidos
         }
 
-        private Usuario ValidarUsuario(string email, string senha)
-        {
-            return _context.usuario
-                .Include(u => u.status)
-                .FirstOrDefault(u => u.email == email && u.senha == senha);
-        }
-
-        private string GerarTokenJWT(UsuarioModel usuario)
-        {
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
-            var securityKey = new SymmetricSecurityKey(key);
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Email, usuario.email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.Now.AddHours(2),
-                signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        return null; // Retorna null se a validação falhar
     }
 }

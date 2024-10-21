@@ -74,7 +74,7 @@ namespace MapeiaVoto.Application.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Execute(() => _baseService.Get<CargoDisputadoModel>());
+            return Execute(() => _baseService.Get<StatusModel>());
         }
 
 

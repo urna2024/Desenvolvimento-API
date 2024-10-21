@@ -4,6 +4,7 @@ using MapeiaVoto.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MapeiaVoto.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(SqlServerContext))]
-    partial class SqlServerContextModelSnapshot : ModelSnapshot
+    [Migration("20240923181210_AddCamposAjustadosEmCandidato")]
+    partial class AddCamposAjustadosEmCandidato
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,13 +34,12 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
                     b.Property<DateTime>("dataNascimento")
-                        .HasColumnType("datetime")
-                        .HasColumnName("dataNascimento");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("foto")
                         .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("foto");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<int>("idCargoDisputado")
                         .HasColumnType("int");
@@ -50,23 +52,23 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
 
                     b.Property<string>("municipio")
                         .IsRequired()
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("municipio");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("nomeCompleto")
                         .IsRequired()
-                        .HasColumnType("varchar(150)")
-                        .HasColumnName("nomeCompleto");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("nomeUrna")
                         .IsRequired()
-                        .HasColumnType("varchar(150)")
-                        .HasColumnName("nomeUrna");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("uf")
                         .IsRequired()
-                        .HasColumnType("varchar(2)")
-                        .HasColumnName("uf");
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
 
                     b.HasKey("id");
 
@@ -376,22 +378,19 @@ namespace MapeiaVoto.Infrastructure.Data.Migrations
                         .WithMany("candidato")
                         .HasForeignKey("idCargoDisputado")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_cargodisputado_candidato");
+                        .IsRequired();
 
                     b.HasOne("MapeiaVoto.Domain.Entidades.PartidoPolitico", "partidopolitico")
                         .WithMany("candidato")
                         .HasForeignKey("idPartidoPolitico")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_partidopolitico_candidato");
+                        .IsRequired();
 
                     b.HasOne("MapeiaVoto.Domain.Entidades.Status", "status")
                         .WithMany("candidato")
                         .HasForeignKey("idStatus")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_status_candidato");
+                        .IsRequired();
 
                     b.Navigation("cargodisputado");
 
